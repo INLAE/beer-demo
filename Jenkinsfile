@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent {
+        docker { image 'docker:24.0.2' } // Используем официальный Docker CLI образ
+    }
 
     environment {
         DOCKER_IMAGE = "shrekhub/beer-demo:latest"
@@ -10,20 +12,6 @@ pipeline {
             steps {
                 echo "Checking out code..."
                 git url: 'https://github.com/INLAE/beer-demo.git', branch: 'main'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                echo "Building the project with Maven..."
-                sh "./mvnw clean package"
-            }
-        }
-
-        stage('Archive Artifacts') {
-            steps {
-                echo "Archiving build artifacts..."
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
 
@@ -41,17 +29,6 @@ pipeline {
                     sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
                     sh "docker push ${DOCKER_IMAGE}"
                 }
-            }
-        }
-
-        stage('Run Docker Container') {
-            steps {
-                echo "Stopping and removing old container (if exists)..."
-                sh "docker stop beer-demo-container || true"
-                sh "docker rm beer-demo-container || true"
-
-                echo "Running new Docker container..."
-                sh "docker run -d -p 8080:8080 --name beer-demo-container ${DOCKER_IMAGE}"
             }
         }
     }
