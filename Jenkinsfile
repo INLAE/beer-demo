@@ -1,11 +1,5 @@
 pipeline {
-    agent {
-        docker { image 'docker:24.0.2' } // Используем официальный Docker CLI образ
-    }
-
-    environment {
-        DOCKER_IMAGE = "shrekhub/beer-demo:latest"
-    }
+    agent any
 
     stages {
         stage('Checkout') {
@@ -15,20 +9,18 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build & Deploy') {
             steps {
                 echo "Building Docker image..."
-                sh "docker build -t ${DOCKER_IMAGE} ."
-            }
-        }
+                sh 'docker build -t myapp:latest .'
 
-        stage('Push to Docker Hub') {
-            steps {
-                echo "Pushing Docker image to Docker Hub..."
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                    sh "docker push ${DOCKER_IMAGE}"
-                }
+                echo "Running container..."
+                // На случай, если контейнер с таким именем уже запущен, остановим его
+                sh 'docker stop myapp || true'
+                sh 'docker rm myapp || true'
+
+                // Запускаем новый контейнер
+                sh 'docker run -d --name myapp -p 8080:8080 myapp:latest'
             }
         }
     }
