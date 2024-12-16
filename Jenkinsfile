@@ -2,25 +2,24 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "beer-demo:latest"   // Локальное имя образа
+        DOCKER_IMAGE = "beer-demo:latest"
         CONTAINER_NAME = "beer-demo-container"
-        JAR_FILE = "target/beer-demo-0.0.1-SNAPSHOT.jar"  // Путь к JAR-файлу
+        APP_PORT = "8081"
+        CONTAINER_PORT = "8080"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo "Checking out code..."
+                echo "Checking out code from GitHub..."
                 git url: 'https://github.com/INLAE/beer-demo.git', branch: 'main'
             }
         }
 
-        stage('Build with Maven') {
+        stage('Build Maven Project') {
             steps {
                 echo "Building project with Maven..."
-                sh "./mvnw clean package"  // Сборка проекта
-                echo "Verifying JAR file..."
-                sh "ls -l ${JAR_FILE}"     // Проверка существования JAR-файла
+                sh "./mvnw clean package"
             }
         }
 
@@ -37,21 +36,31 @@ pipeline {
                 sh "docker stop ${CONTAINER_NAME} || true"
                 sh "docker rm ${CONTAINER_NAME} || true"
 
-                echo "Running new Docker container..."
-                sh "docker run -d -p 8080:8080 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
+                echo "Running new Docker container on port ${APP_PORT}..."
+                sh "docker run -d -p ${APP_PORT}:${CONTAINER_PORT} --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                echo "Waiting for the application to start..."
+                sh "sleep 10" // Пауза перед проверкой
+
+                echo "Checking if the application is running..."
+                sh "curl -I http://localhost:${APP_PORT} || exit 1"
             }
         }
     }
 
     post {
-        success {
-            echo "Pipeline completed successfully! Access the application at http://localhost:8080"
-        }
-        failure {
-            echo "Pipeline failed! Please check the logs for errors."
-        }
         always {
             echo "Pipeline completed with status: ${currentBuild.result}"
+        }
+        success {
+            echo "Deployment successful! Application is running on http://localhost:${APP_PORT}"
+        }
+        failure {
+            echo "Deployment failed! Check the logs for details."
         }
     }
 }
