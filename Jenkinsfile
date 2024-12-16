@@ -44,10 +44,10 @@ pipeline {
         stage('Verify Deployment') {
             steps {
                 echo "Waiting for the application to start..."
-                sh "sleep 10" // Пауза перед проверкой
+                sh "sleep 10" // Пауза перед проверкой, чтобы приложение успело запуститься
 
                 echo "Checking if the application is running..."
-                sh "curl -I http://localhost:${APP_PORT}/beers || exit 1"
+                sh "curl -I http://host.docker.internal:${APP_PORT}/beers || exit 1"
             }
         }
     }
