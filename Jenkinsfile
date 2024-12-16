@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "beer-demo:latest" // Локальное имя образа
+        DOCKER_IMAGE = "beer-demo:latest"   // Локальное имя образа
         CONTAINER_NAME = "beer-demo-container"
+        JAR_FILE = "target/beer-demo-0.0.1-SNAPSHOT.jar"  // Путь к JAR-файлу
     }
 
     stages {
@@ -11,6 +12,15 @@ pipeline {
             steps {
                 echo "Checking out code..."
                 git url: 'https://github.com/INLAE/beer-demo.git', branch: 'main'
+            }
+        }
+
+        stage('Build with Maven') {
+            steps {
+                echo "Building project with Maven..."
+                sh "./mvnw clean package"  // Сборка проекта
+                echo "Verifying JAR file..."
+                sh "ls -l ${JAR_FILE}"     // Проверка существования JAR-файла
             }
         }
 
@@ -34,6 +44,12 @@ pipeline {
     }
 
     post {
+        success {
+            echo "Pipeline completed successfully! Access the application at http://localhost:8080"
+        }
+        failure {
+            echo "Pipeline failed! Please check the logs for errors."
+        }
         always {
             echo "Pipeline completed with status: ${currentBuild.result}"
         }
