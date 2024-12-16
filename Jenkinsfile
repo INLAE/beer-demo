@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = "beer-demo:latest" // Локальное имя образа
+        CONTAINER_NAME = "beer-demo-container"
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -9,24 +14,28 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                echo "Building the project with Maven..."
-                sh "./mvnw clean package"
+                echo "Building Docker image locally..."
+                sh "docker build -t ${DOCKER_IMAGE} ."
             }
         }
 
-        stage('Archive Artifacts') {
+        stage('Run Docker Container') {
             steps {
-                echo "Archiving build artifacts..."
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                echo "Stopping and removing old container if it exists..."
+                sh "docker stop ${CONTAINER_NAME} || true"
+                sh "docker rm ${CONTAINER_NAME} || true"
+
+                echo "Running new Docker container..."
+                sh "docker run -d -p 8080:8080 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
             }
         }
     }
 
     post {
         always {
-            echo "Build completed with status: ${currentBuild.result}"
+            echo "Pipeline completed with status: ${currentBuild.result}"
         }
     }
 }
