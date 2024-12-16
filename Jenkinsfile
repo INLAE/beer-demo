@@ -47,7 +47,7 @@ pipeline {
                 sh "sleep 10" // Пауза перед проверкой
 
                 echo "Checking if the application is running..."
-                sh "curl -I http://localhost:${APP_PORT} || exit 1"
+                sh "curl -I http://localhost:${APP_PORT}/beers || exit 1"
             }
         }
     }
