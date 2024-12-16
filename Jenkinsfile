@@ -37,7 +37,7 @@ pipeline {
                 sh "docker rm ${CONTAINER_NAME} || true"
 
                 echo "Running new Docker container on port ${APP_PORT}..."
-                sh "docker run -d -p ${APP_PORT}:${CONTAINER_PORT} --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
+                sh "docker run -d --network=host --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
             }
         }
 
