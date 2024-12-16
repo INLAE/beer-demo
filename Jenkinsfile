@@ -9,25 +9,24 @@ pipeline {
             }
         }
 
-        stage('Build & Deploy') {
+        stage('Build') {
             steps {
-                echo "Building Docker image..."
-                sh 'docker build -t myapp:latest .'
+                echo "Building the project with Maven..."
+                sh "./mvnw clean package"
+            }
+        }
 
-                echo "Running container..."
-                // На случай, если контейнер с таким именем уже запущен, остановим его
-                sh 'docker stop myapp || true'
-                sh 'docker rm myapp || true'
-
-                // Запускаем новый контейнер
-                sh 'docker run -d --name myapp -p 8080:8080 myapp:latest'
+        stage('Archive Artifacts') {
+            steps {
+                echo "Archiving build artifacts..."
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
     }
 
     post {
         always {
-            echo "Pipeline completed with status: ${currentBuild.result}"
+            echo "Build completed with status: ${currentBuild.result}"
         }
     }
 }
